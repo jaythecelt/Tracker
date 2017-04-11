@@ -36,11 +36,11 @@ public class SignUpActivity extends Activity {
      * @param view the Android View
      */
     public void signUp(final View view) {
-        final String username = ViewHelper.getStringValue(this, R.id.signup_username);
-        final String password = ViewHelper.getStringValue(this, R.id.signup_password);
-        final String givenName = ViewHelper.getStringValue(this, R.id.signup_given_name);
-        final String email = ViewHelper.getStringValue(this, R.id.signup_email);
-        final String phone = ViewHelper.getStringValue(this, R.id.signup_phone);
+        final String username = ViewHelper.getEditTextStringValue(this, R.id.signup_username);
+        final String password = ViewHelper.getEditTextStringValue(this, R.id.signup_password);
+        final String givenName = ViewHelper.getEditTextStringValue(this, R.id.signup_given_name);
+        final String email = ViewHelper.getEditTextStringValue(this, R.id.signup_email);
+        final String phone = ViewHelper.getEditTextStringValue(this, R.id.signup_phone);
 
         Log.d(LOG_TAG, "username = " + username);
         Log.d(LOG_TAG, "given_name = " + givenName);

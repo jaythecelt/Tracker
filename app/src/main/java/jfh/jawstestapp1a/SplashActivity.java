@@ -58,8 +58,8 @@ public class SplashActivity extends Activity {
                     final StartupAuthErrorDetails errors = authResult.getErrorDetails();
                     if (errors.didErrorOccurRefreshingProvider()) {
                         Log.w(TAG, String.format(
-                                "Credentials for Previously signed-in provider %s could not be refreshed.",
-                                errors.getErrorProvider().getDisplayName()), errors.getProviderErrorException());
+                                "Credentials for Previously signed-in provider could not be refreshed."),
+                                errors.getProviderRefreshException());
                     }
                     doMandatorySignIn(identityManager);
                     return;

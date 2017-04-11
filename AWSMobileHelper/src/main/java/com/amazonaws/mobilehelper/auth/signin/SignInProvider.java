@@ -45,5 +45,5 @@ public interface SignInProvider extends IdentityProvider {
      */
     View.OnClickListener initializeSignInButton(Activity signInActivity,
                                 View buttonView,
-                                SignInProviderResultsHandler resultsHandler);
+                                SignInProviderResultHandler resultsHandler);
 }

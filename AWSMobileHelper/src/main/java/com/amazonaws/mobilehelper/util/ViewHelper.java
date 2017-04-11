@@ -24,12 +24,26 @@ public final class ViewHelper {
      * @param viewId resource ID
      * @return the String value from the EditText control
      */
-    public static String getStringValue(final Activity activity, final int viewId) {
+    public static String getEditTextStringValue(final Activity activity, final int viewId) {
         if (null == activity) {
             return "";
         }
 
         return ((EditText) activity.findViewById(viewId)).getText().toString();
+    }
+
+    /**
+     * Sets the String value in an EditText control.
+     *
+     * @param activity invoking Activity
+     * @param viewId resource ID
+     * @param value the String value of the text to set in the EditText control
+     */
+    public static void setEditTextStringValue(final Activity activity, final int viewId,
+                                              final String value) {
+        if (null != value) {
+            ((EditText) activity.findViewById(viewId)).setText(value);
+        }
     }
 
     /**

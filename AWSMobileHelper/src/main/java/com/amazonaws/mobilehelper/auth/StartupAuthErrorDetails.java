@@ -8,19 +8,18 @@ package com.amazonaws.mobilehelper.auth;
 // Source code generated from template: aws-my-sample-app-android v0.16
 //
 
+import com.amazonaws.mobilehelper.auth.signin.AuthException;
+
 /**
  * Encapsulates errors that may have happened during doStartupAuth().
  */
 public class StartupAuthErrorDetails {
-    private final IdentityProvider errorProvider;
-    private final Exception providerException;
+    private final AuthException authException;
     private final Exception unauthException;
 
-    /* package */ StartupAuthErrorDetails(final IdentityProvider errorProvider,
-                                          final Exception providerException,
+    /* package */ StartupAuthErrorDetails(final AuthException authException,
                                           final Exception unauthException) {
-        this.errorProvider = errorProvider;
-        this.providerException = providerException;
+        this.authException = authException;
         this.unauthException = unauthException;
     }
 
@@ -28,21 +27,14 @@ public class StartupAuthErrorDetails {
      * @return true if an error occurred refreshing a previously signed in provider, otherwise false.
      */
     public boolean didErrorOccurRefreshingProvider() {
-        return errorProvider != null;
+        return authException != null;
     }
 
     /**
-     * @return the identity provider that encountered an error, otherwise null.
+     * @return the AuthException that occurred while refreshing a provider, otherwise null.
      */
-    public IdentityProvider getErrorProvider() {
-        return errorProvider;
-    }
-
-    /**
-     * @return the exception that occurred while refreshing a provider, otherwise null.
-     */
-    public Exception getProviderErrorException() {
-        return providerException;
+    public AuthException getProviderRefreshException() {
+        return authException;
     }
 
     /**

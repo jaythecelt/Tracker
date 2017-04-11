@@ -38,10 +38,9 @@ public class SignInActivity extends Activity {
     private View.OnClickListener googleOnClickListener;
 
     /**
-     * SignInProviderResultsHandler handles the final result from sign in. Making it static is a best
-     * practice since it may outlive the SplashActivity's life span.
+     * SignInProviderResultHandlerImpl handles the final result from sign in.
      */
-    private class SignInProviderResultsHandler implements com.amazonaws.mobilehelper.auth.signin.SignInProviderResultsHandler {
+    private class SignInProviderResultHandlerImpl implements SignInProviderResultHandler {
         /**
          * Receives the successful sign-in result and starts the main activity.
          *
@@ -101,7 +100,7 @@ public class SignInActivity extends Activity {
 
         signInManager = SignInManager.getInstance();
 
-        signInManager.setProviderResultsHandler(this, new SignInProviderResultsHandler());
+        signInManager.setProviderResultsHandler(this, new SignInProviderResultHandlerImpl());
 
         // Initialize sign-in buttons.
         signInManager.initializeSignInButton(IdentityProviderType.COGNITO_USER_POOL,

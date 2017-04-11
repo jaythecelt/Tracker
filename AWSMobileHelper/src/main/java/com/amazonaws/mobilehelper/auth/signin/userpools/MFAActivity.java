@@ -36,7 +36,7 @@ public class MFAActivity extends Activity {
      * @param view the Android View
      */
     public void verify(final View view) {
-        final String verificationCode = ViewHelper.getStringValue(this, R.id.mfa_code);
+        final String verificationCode = ViewHelper.getEditTextStringValue(this, R.id.mfa_code);
 
         Log.d(LOG_TAG, "verificationCode = " + verificationCode);
 

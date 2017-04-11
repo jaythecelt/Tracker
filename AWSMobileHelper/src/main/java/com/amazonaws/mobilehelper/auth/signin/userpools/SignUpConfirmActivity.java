@@ -29,6 +29,10 @@ public class SignUpConfirmActivity extends Activity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up_confirm);
+
+        final String username = getIntent().getStringExtra(
+            CognitoUserPoolsSignInProvider.AttributeKeys.USERNAME);
+        ViewHelper.setEditTextStringValue(this, R.id.confirm_account_username, username);
     }
 
     /**
@@ -37,9 +41,9 @@ public class SignUpConfirmActivity extends Activity {
      */
     public void confirmAccount(final View view) {
         final String username =
-                ViewHelper.getStringValue(this, R.id.confirm_account_username);
+            ViewHelper.getEditTextStringValue(this, R.id.confirm_account_username);
         final String verificationCode =
-                ViewHelper.getStringValue(this, R.id.confirm_account_confirmation_code);
+            ViewHelper.getEditTextStringValue(this, R.id.confirm_account_confirmation_code);
 
         Log.d(LOG_TAG, "username = " + username);
         Log.d(LOG_TAG, "verificationCode = " + verificationCode);

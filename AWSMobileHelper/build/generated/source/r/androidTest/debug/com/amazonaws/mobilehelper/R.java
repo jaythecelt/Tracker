@@ -799,8 +799,9 @@ public final class R {
 		public static final int title_activity_sign_in = 0x7f060045;
 		public static final int title_activity_sign_up = 0x7f060046;
 		public static final int title_activity_sign_up_confirm = 0x7f060047;
-		public static final int username_text = 0x7f060048;
-		public static final int verify_button_text = 0x7f060049;
+		public static final int title_dialog_sign_up_failed = 0x7f060048;
+		public static final int username_text = 0x7f060049;
+		public static final int verify_button_text = 0x7f06004a;
 	}
 	public static final class style {
 		public static final int AlertDialog_AppCompat = 0x7f08008a;

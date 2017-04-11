@@ -380,6 +380,7 @@
     <string name="title_activity_sign_in">Sign-in</string>
     <string name="title_activity_sign_up">Sign Up</string>
     <string name="title_activity_sign_up_confirm">Confirm Account</string>
+    <string name="title_dialog_sign_up_failed">Sign Up Failed</string>
     <string name="username_text">Username</string>
     <string name="verify_button_text">Verify</string>
     <style name="AlertDialog.AppCompat" parent="Base.AlertDialog.AppCompat"/>

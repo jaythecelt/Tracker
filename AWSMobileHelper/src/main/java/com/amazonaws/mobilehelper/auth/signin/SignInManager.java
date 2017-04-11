@@ -128,12 +128,12 @@ public class SignInManager {
         return null;
     }
 
-    private class SignInProviderResultsAdapter implements SignInProviderResultsHandler {
-        final private SignInProviderResultsHandler handler;
+    private class SignInProviderResultAdapter implements SignInProviderResultHandler {
+        final private SignInProviderResultHandler handler;
         final private Activity activity;
 
-        private SignInProviderResultsAdapter(final Activity activity,
-                                            final SignInProviderResultsHandler handler) {
+        private SignInProviderResultAdapter(final Activity activity,
+                                            final SignInProviderResultHandler handler) {
             this.handler = handler;
             this.activity = activity;
         }
@@ -176,7 +176,7 @@ public class SignInManager {
         }
     }
 
-    private SignInProviderResultsAdapter resultsAdapter;
+    private SignInProviderResultAdapter resultsAdapter;
 
     /**
      * Refresh Cognito credentials with a provider.  Results handlers are always called on the main
@@ -186,8 +186,8 @@ public class SignInManager {
      * @param resultsHandler the handler to receive results for credential refresh.
      */
     public void refreshCredentialsWithProvider(final Activity activity,
-                                               final SignInProvider provider,
-                                               final SignInProviderResultsHandler resultsHandler) {
+                                               final IdentityProvider provider,
+                                               final SignInProviderResultHandler resultsHandler) {
 
         if (provider == null) {
             throw new IllegalArgumentException("The sign-in provider cannot be null.");
@@ -198,7 +198,7 @@ public class SignInManager {
                 new IllegalArgumentException("Given provider not previously logged in."));
         }
 
-        resultsAdapter = new SignInProviderResultsAdapter(activity, resultsHandler);
+        resultsAdapter = new SignInProviderResultAdapter(activity, resultsHandler);
         identityManager.setProviderResultsHandler(resultsAdapter);
 
         identityManager.federateWithProvider(provider);
@@ -211,8 +211,8 @@ public class SignInManager {
      * @param resultsHandler the handler for results from sign-in with a provider.
      */
     public void setProviderResultsHandler(final Activity activity,
-                                          final SignInProviderResultsHandler resultsHandler) {
-        resultsAdapter = new SignInProviderResultsAdapter(activity, resultsHandler);
+                                          final SignInProviderResultHandler resultsHandler) {
+        resultsAdapter = new SignInProviderResultAdapter(activity, resultsHandler);
         // Set the final results handler with the identity manager.
         identityManager.setProviderResultsHandler(resultsAdapter);
     }

@@ -37,9 +37,9 @@ public class ForgotPasswordActivity extends Activity {
      */
     public void forgotPassword(final View view) {
         final String password =
-                ViewHelper.getStringValue(this, R.id.forgot_password_password);
+            ViewHelper.getEditTextStringValue(this, R.id.forgot_password_password);
         final String verificationCode =
-                ViewHelper.getStringValue(this, R.id.forgot_password_verification_code);
+            ViewHelper.getEditTextStringValue(this, R.id.forgot_password_verification_code);
 
         Log.d(LOG_TAG, "verificationCode = " + verificationCode);
 

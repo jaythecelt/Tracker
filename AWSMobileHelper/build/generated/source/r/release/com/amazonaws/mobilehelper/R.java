@@ -2070,8 +2070,9 @@ containing a value of this type.
         public static int title_activity_sign_in=0x7f060045;
         public static int title_activity_sign_up=0x7f060046;
         public static int title_activity_sign_up_confirm=0x7f060047;
-        public static int username_text=0x7f060048;
-        public static int verify_button_text=0x7f060049;
+        public static int title_dialog_sign_up_failed=0x7f060048;
+        public static int username_text=0x7f060049;
+        public static int verify_button_text=0x7f06004a;
     }
     public static final class style {
         public static int AlertDialog_AppCompat=0x7f08008a;

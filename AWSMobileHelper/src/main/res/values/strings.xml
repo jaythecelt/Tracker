@@ -16,6 +16,7 @@
     <string name="title_activity_forgot_password">Forgot Password</string>
     <string name="title_activity_mfa">MFA Code</string>
     <string name="title_activity_sign_up_confirm">Confirm Account</string>
+    <string name="title_dialog_sign_up_failed">Sign Up Failed</string>
     <string name="forgot_password_header">Forgot your password?</string>
     <string name="forgot_password_body">Set your new password with the verification code that was sent to you.</string>
     <string name="forgot_password_input_code_hint">Verification code</string>

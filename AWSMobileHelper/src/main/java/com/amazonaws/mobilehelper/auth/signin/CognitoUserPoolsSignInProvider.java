@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.VerificationHandler;
 import com.amazonaws.mobilehelper.auth.IdentityProviderType;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
@@ -38,10 +39,10 @@ import com.amazonaws.mobilehelper.auth.signin.userpools.MFAActivity;
 import com.amazonaws.mobilehelper.auth.signin.userpools.SignUpActivity;
 import com.amazonaws.mobilehelper.auth.signin.userpools.SignUpConfirmActivity;
 import com.amazonaws.mobilehelper.util.ViewHelper;
+import com.amazonaws.services.cognitoidentityprovider.model.UserNotConfirmedException;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Manages sign-in using Cognito User Pools.
@@ -109,7 +110,7 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
     }};
 
     /** The sign-in results adapter from the SignInManager. */
-    private SignInProviderResultsHandler resultsHandler;
+    private SignInProviderResultHandler resultsHandler;
 
     /** Forgot Password processing provided by the Cognito User Pools SDK. */
     private ForgotPasswordContinuation forgotPasswordContinuation;
@@ -140,9 +141,6 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
     /** Active Cognito User Pools session. */
     private CognitoUserSession cognitoUserSession;
 
-    /** Latch to ensure Cognito User Pools SDK is initialized before attempting to read the authorization token. */
-    private final CountDownLatch initializedLatch = new CountDownLatch(1);
-
     /**
      * Handle callbacks from the Forgot Password flow.
      */
@@ -170,6 +168,12 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
         }
     };
 
+    private void startVerificationActivity() {
+        final Intent intent = new Intent(context, SignUpConfirmActivity.class);
+        intent.putExtra(AttributeKeys.USERNAME, username);
+        activity.startActivityForResult(intent, VERIFICATION_REQUEST_CODE);
+    }
+
     /**
      * Handle callbacks from the Sign Up flow.
      */
@@ -184,15 +188,15 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
             } else {
                 Log.w(LOG_TAG, "Additional confirmation for sign up.");
 
-                final Intent intent = new Intent(context, SignUpConfirmActivity.class);
-                activity.startActivityForResult(intent, VERIFICATION_REQUEST_CODE);
+                startVerificationActivity();
             }
         }
 
         @Override
         public void onFailure(final Exception exception) {
             Log.e(LOG_TAG, "Sign up failed.", exception);
-            ViewHelper.showDialog(activity, activity.getString(R.string.title_activity_sign_up),
+            ViewHelper.showDialog(activity, activity.getString(R.string.title_dialog_sign_up_failed),
+                exception.getMessage() != null ? exception.getMessage() :
                     activity.getString(R.string.sign_up_failed));
         }
     };
@@ -216,6 +220,28 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
         }
     };
 
+    private void resendConfirmationCode() {
+        final CognitoUser cognitoUser = cognitoUserPool.getUser(username);
+        cognitoUser.resendConfirmationCodeInBackground(new VerificationHandler() {
+            @Override
+            public void onSuccess(final CognitoUserCodeDeliveryDetails verificationCodeDeliveryMedium) {
+                startVerificationActivity();
+            }
+
+            @Override
+            public void onFailure(final Exception exception) {
+                if (null != resultsHandler) {
+                    ViewHelper.showDialog(activity, activity.getString(R.string.title_activity_sign_in),
+                        activity.getString(R.string.login_failed)
+                            + "\nUser was not verified and resending confirmation code failed.\n"
+                            + exception);
+
+                    resultsHandler.onError(CognitoUserPoolsSignInProvider.this, exception);
+                }
+            }
+        });
+    }
+
     /**
      * Handle callbacks from the Authentication flow. Includes MFA handling.
      */
@@ -227,13 +253,11 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
             cognitoUserSession = userSession;
 
             if (null != resultsHandler) {
-//                ViewHelper.showDialog(activity, activity.getString(R.string.title_activity_sign_in),
-//                        activity.getString(R.string.login_success) + " " + userSession.getIdToken());
+                ViewHelper.showDialog(activity, activity.getString(R.string.title_activity_sign_in),
+                        activity.getString(R.string.login_success) + " " + userSession.getIdToken());
 
                 resultsHandler.onSuccess(CognitoUserPoolsSignInProvider.this);
             }
-
-            initializedLatch.countDown();
         }
 
         @Override
@@ -249,8 +273,6 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
                 authenticationContinuation.setAuthenticationDetails(authenticationDetails);
                 authenticationContinuation.continueTask();
             }
-
-            initializedLatch.countDown();
         }
 
         @Override
@@ -270,14 +292,22 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
         public void onFailure(final Exception exception) {
             Log.e(LOG_TAG, "Failed to login.", exception);
 
+            // UserNotConfirmedException will only happen once in the sign-in flow in the case
+            // that the user attempting to sign in had not confirmed their account by entering
+            // the correct verification code. A different exception is thrown if the code
+            // is invalid, so this will not create an continuous confirmation loop if the
+            // user enters the wrong code.
+            if (exception instanceof UserNotConfirmedException) {
+                resendConfirmationCode();
+                return;
+            }
+
             if (null != resultsHandler) {
                 ViewHelper.showDialog(activity, activity.getString(R.string.title_activity_sign_in),
                         activity.getString(R.string.login_failed) + " " + exception);
 
                 resultsHandler.onError(CognitoUserPoolsSignInProvider.this, exception);
             }
-
-            initializedLatch.countDown();
         }
     };
 
@@ -295,8 +325,6 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
         cognitoLoginKey = "cognito-idp." +  configuration.getCognitoRegion().getName()
             + ".amazonaws.com/" + configuration.getCognitoUserPoolId();
         Log.d(LOG_TAG, "CognitoLoginKey: " + cognitoLoginKey);
-
-        cognitoUserPool.getCurrentUser().getSession(authenticationHandler);
     }
 
     /** {@inheritDoc} */
@@ -377,7 +405,7 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
     @Override
     public View.OnClickListener initializeSignInButton(final Activity signInActivity,
                                                        final View buttonView,
-                                                       final SignInProviderResultsHandler resultsHandler) {
+                                                       final SignInProviderResultHandler resultsHandler) {
 
         this.activity = signInActivity;
         this.resultsHandler = resultsHandler;
@@ -399,7 +427,7 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
         activity.findViewById(TEXT_VIEW_FORGOT_PASSWORD_ID).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                username = ViewHelper.getStringValue(activity, EDIT_TEXT_USERNAME_ID);
+                username = ViewHelper.getEditTextStringValue(activity, EDIT_TEXT_USERNAME_ID);
                 if (username.length() < 1) {
                     Log.w(LOG_TAG, "Missing username.");
                     ViewHelper.showDialog(activity, activity.getString(R.string.title_activity_sign_in),
@@ -416,8 +444,8 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
         final View.OnClickListener listener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                username = ViewHelper.getStringValue(activity, EDIT_TEXT_USERNAME_ID);
-                password = ViewHelper.getStringValue(activity, EDIT_TEXT_PASSWORD_ID);
+                username = ViewHelper.getEditTextStringValue(activity, EDIT_TEXT_USERNAME_ID);
+                password = ViewHelper.getEditTextStringValue(activity, EDIT_TEXT_PASSWORD_ID);
 
                 final CognitoUser cognitoUser = cognitoUserPool.getUser(username);
 
@@ -446,16 +474,63 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
         return cognitoLoginKey;
     }
 
+    /**
+     * Authentication handler for handling token refresh.
+     */
+    private class RefreshSessionAuthenticationHandler implements AuthenticationHandler {
+        private CognitoUserSession userSession = null;
+
+        private CognitoUserSession getUserSession() {
+            return userSession;
+        }
+
+        @Override
+        public void onSuccess(final CognitoUserSession userSession, final CognitoDevice newDevice) {
+            this.userSession = userSession;
+        }
+
+        @Override
+        public void getAuthenticationDetails(final AuthenticationContinuation authenticationContinuation,
+                                             final String UserId) {
+            Log.d(LOG_TAG, "Can't refresh the session silently, due to authentication details needed.");
+        }
+
+        @Override
+        public void getMFACode(final MultiFactorAuthenticationContinuation continuation) {
+            Log.wtf(LOG_TAG, "Refresh flow can not trigger request for MFA code.");
+        }
+
+        @Override
+        public void authenticationChallenge(final ChallengeContinuation continuation) {
+            Log.wtf(LOG_TAG, "Refresh flow can not trigger request for authentication challenge.");
+        }
+
+        @Override
+        public void onFailure(final Exception exception) {
+            Log.e(LOG_TAG, "Can't refresh session.", exception);
+        }
+    }
+
     /** {@inheritDoc} */
     @Override
     public boolean refreshUserSignInState() {
-        try {
-            initializedLatch.await();
-        } catch (final InterruptedException ex) {
-            Log.e(LOG_TAG,"Unexpected interrupt.", ex);
+        if (null != cognitoUserSession && cognitoUserSession.isValid()) {
+            return true;
         }
 
-        return null != cognitoUserSession && cognitoUserSession.isValid();
+        final RefreshSessionAuthenticationHandler refreshSessionAuthenticationHandler
+            = new RefreshSessionAuthenticationHandler();
+
+        cognitoUserPool.getCurrentUser().getSession(refreshSessionAuthenticationHandler);
+        if (null != refreshSessionAuthenticationHandler.getUserSession()) {
+            cognitoUserSession = refreshSessionAuthenticationHandler.getUserSession();
+            Log.i(LOG_TAG, "refreshUserSignInState: Signed in with Cognito.");
+            return true;
+        }
+
+        Log.i(LOG_TAG, "refreshUserSignInState: Not signed in with Cognito.");
+        cognitoUserSession = null;
+        return false;
     }
 
     /** {@inheritDoc} */
@@ -467,7 +542,22 @@ public class CognitoUserPoolsSignInProvider implements SignInProvider {
     /** {@inheritDoc} */
     @Override
     public String refreshToken() {
-        // Cognito User Pools SDK handles token refresh.
+        // If there is a session, but the credentials are expired rendering the session not valid.
+        if ((cognitoUserSession != null) && !cognitoUserSession.isValid()) {
+            // Attempt to refresh the credentials.
+            final RefreshSessionAuthenticationHandler refreshSessionAuthenticationHandler
+                = new RefreshSessionAuthenticationHandler();
+
+            // Cognito User Pools SDK will attempt to refresh the token upon calling getSession().
+            cognitoUserPool.getCurrentUser().getSession(refreshSessionAuthenticationHandler);
+
+            if (null != refreshSessionAuthenticationHandler.getUserSession()) {
+                cognitoUserSession = refreshSessionAuthenticationHandler.getUserSession();
+            } else {
+                Log.e(LOG_TAG, "Could not refresh the Cognito User Pool Token.");
+            }
+        }
+
         return getToken();
     }
 

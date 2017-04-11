@@ -20,10 +20,13 @@ import com.amazonaws.auth.AWSBasicCognitoIdentityProvider;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.mobilehelper.auth.signin.AuthException;
+import com.amazonaws.mobilehelper.auth.signin.CognitoAuthException;
+import com.amazonaws.mobilehelper.auth.signin.ProviderAuthException;
 import com.amazonaws.mobilehelper.auth.signin.SignInActivity;
 import com.amazonaws.mobilehelper.auth.signin.SignInManager;
 import com.amazonaws.mobilehelper.auth.signin.SignInProvider;
-import com.amazonaws.mobilehelper.auth.signin.SignInProviderResultsHandler;
+import com.amazonaws.mobilehelper.auth.signin.SignInProviderResultHandler;
 import com.amazonaws.mobilehelper.config.AWSMobileHelperConfiguration;
 
 import com.amazonaws.mobilehelper.util.ThreadUtils;
@@ -102,7 +105,7 @@ public class IdentityManager {
     private volatile IdentityProvider currentIdentityProvider = null;
 
     /** Results adapter for adapting results that came from logging in with a provider. */
-    private SignInProviderResultsAdapter resultsAdapter;
+    private SignInProviderResultAdapter resultsAdapter;
 
     /** Keep track of the currently registered SignInStateChangeListeners. */
     private final HashSet<SignInStateChangeListener> signInStateChangeListeners = new HashSet<>();
@@ -263,47 +266,49 @@ public class IdentityManager {
      * The adapter to handle results that come back from Cognito as well as handle the result from
      * any login providers.
      */
-    private class SignInProviderResultsAdapter implements SignInProviderResultsHandler {
-        final private SignInProviderResultsHandler handler;
+    private class SignInProviderResultAdapter implements SignInProviderResultHandler {
+        final private SignInProviderResultHandler handler;
 
-        private SignInProviderResultsAdapter(final SignInProviderResultsHandler handler) {
+        private SignInProviderResultAdapter(final SignInProviderResultHandler handler) {
             this.handler = handler;
         }
 
+        @Override
         public void onSuccess(final IdentityProvider provider) {
             Log.d(LOG_TAG,
-                    String.format("SignInProviderResultsAdapter.onSuccess(): %s provider sign-in succeeded.",
+                    String.format("SignInProviderResultAdapter.onSuccess(): %s provider sign-in succeeded.",
                             provider.getDisplayName()));
-            // Update cognito login with the token.
+            // Update Cognito login with the token.
             federateWithProvider(provider);
         }
 
         private void onCognitoSuccess() {
-            Log.d(LOG_TAG, "SignInProviderResultsAdapter.onCognitoSuccess()");
+            Log.d(LOG_TAG, "SignInProviderResultAdapter.onCognitoSuccess()");
             handler.onSuccess(currentIdentityProvider);
         }
 
         private void onCognitoError(final Exception ex) {
-            Log.d(LOG_TAG, "SignInProviderResultsAdapter.onCognitoError()", ex);
+            Log.d(LOG_TAG, "SignInProviderResultAdapter.onCognitoError()", ex);
             final IdentityProvider provider = currentIdentityProvider;
             // Sign out of parent provider. This clears the currentIdentityProvider.
             IdentityManager.this.signOut();
-            handler.onError(provider, ex);
-
+            handler.onError(provider, new CognitoAuthException(provider, ex));
         }
 
+        @Override
         public void onCancel(final IdentityProvider provider) {
-            Log.d(LOG_TAG,
-                    String.format("SignInProviderResultsAdapter.onCancel(): %s provider sign-in canceled.",
-                            provider.getDisplayName()));
+            Log.d(LOG_TAG, String.format(
+                "SignInProviderResultAdapter.onCancel(): %s provider sign-in canceled.",
+                provider.getDisplayName()));
             handler.onCancel(provider);
         }
 
+        @Override
         public void onError(final IdentityProvider provider, final Exception ex) {
             Log.e(LOG_TAG,
-                    String.format("SignInProviderResultsAdapter.onError(): %s provider error. %s",
-                            provider.getDisplayName(), ex.getMessage()), ex);
-            handler.onError(provider, ex);
+                String.format("SignInProviderResultAdapter.onError(): %s provider error. %s",
+                              provider.getDisplayName(), ex.getMessage()), ex);
+            handler.onError(provider, new ProviderAuthException(provider, ex));
         }
     }
 
@@ -331,15 +336,17 @@ public class IdentityManager {
 
     /**
      * Call getResultsAdapter to get the IdentityManager's handler that adapts results before
-     * sending them back to the handler set by {@link #setProviderResultsHandler(SignInProviderResultsHandler)}
+     * sending them back to the handler set by {@link #setProviderResultsHandler(SignInProviderResultHandler)}
      * @return the Identity Manager's results adapter.
      */
-    public SignInProviderResultsAdapter getResultsAdapter() {
+    public SignInProviderResultAdapter getResultsAdapter() {
         return resultsAdapter;
     }
 
     /**
-     * Sign out of the currently in use credentials provider and clear Cognito credentials.
+     * Sign out of the current identity provider, and clear Cognito credentials.
+     * Note: This call does not attempt to obtain un-auth credentials. To obtain an unauthenticated
+     * anonymous (guest) identity, call {@link #getUserID(IdentityHandler)}.
      */
     public void signOut() {
         Log.d(LOG_TAG, "Signing out...");
@@ -386,13 +393,13 @@ public class IdentityManager {
     /**
      * Set the results handler that will be used for results when calling federateWithProvider.
      *
-     * @param signInProviderResultsHandler the results handler.
+     * @param signInProviderResultHandler the results handler.
      */
-    public void setProviderResultsHandler(final SignInProviderResultsHandler signInProviderResultsHandler) {
-        if (signInProviderResultsHandler == null) {
-            throw new IllegalArgumentException("signInProviderResultsHandler cannot be null.");
+    public void setProviderResultsHandler(final SignInProviderResultHandler signInProviderResultHandler) {
+        if (signInProviderResultHandler == null) {
+            throw new IllegalArgumentException("signInProviderResultHandler cannot be null.");
         }
-        this.resultsAdapter = new SignInProviderResultsAdapter(signInProviderResultsHandler);
+        this.resultsAdapter = new SignInProviderResultAdapter(signInProviderResultHandler);
     }
 
     /**
@@ -521,24 +528,22 @@ public class IdentityManager {
 
     private void handleStartupAuthResult(final Activity callingActivity,
                                          final StartupAuthResultHandler startupAuthResultHandler,
-                                         final IdentityProvider provider,
-                                         final Exception providerException,
+                                         final AuthException authException,
                                          final Exception unAuthException) {
         runAfterStartupAuthDelay(callingActivity, new Runnable() {
             @Override
             public void run() {
                 startupAuthResultHandler.onComplete(new StartupAuthResult(IdentityManager.this,
-                    new StartupAuthErrorDetails(provider, providerException, unAuthException)));
+                    new StartupAuthErrorDetails(authException, unAuthException)));
             }
         });
     }
 
     private void handleUnauthenticated(final Activity callingActivity,
                                        final StartupAuthResultHandler startupAuthResultHandler,
-                                       final IdentityProvider provider,
-                                       final Exception ex) {
+                                       final AuthException ex) {
 
-        handleStartupAuthResult(callingActivity, startupAuthResultHandler, provider, ex, null);
+        handleStartupAuthResult(callingActivity, startupAuthResultHandler, ex, null);
     }
 
     /**
@@ -592,7 +597,7 @@ public class IdentityManager {
                     Log.d(LOG_TAG, "Refreshing credentials with identity provider " + provider.getDisplayName());
                     // asynchronously handle refreshing credentials and call our handler.
                     signInManager.refreshCredentialsWithProvider(callingActivity,
-                        provider, new SignInProviderResultsHandler() {
+                        provider, new SignInProviderResultHandler() {
 
                             @Override
                             public void onSuccess(final IdentityProvider provider) {
@@ -629,12 +634,17 @@ public class IdentityManager {
                                     String.format("Cognito credentials refresh with %s provider failed. Error: %s",
                                         provider.getDisplayName(), ex.getMessage()), ex);
 
-                                handleUnauthenticated(callingActivity, startupAuthResultHandler, provider, ex);
-
+                                if (ex instanceof AuthException) {
+                                    handleUnauthenticated(callingActivity, startupAuthResultHandler,
+                                        (AuthException) ex);
+                                } else {
+                                    handleUnauthenticated(callingActivity, startupAuthResultHandler,
+                                        new AuthException(provider, ex));
+                                }
                             }
                         });
                 } else {
-                    handleUnauthenticated(callingActivity, startupAuthResultHandler, null, null);
+                    handleUnauthenticated(callingActivity, startupAuthResultHandler, null);
                 }
 
                 if (minimumDelay > 0) {
