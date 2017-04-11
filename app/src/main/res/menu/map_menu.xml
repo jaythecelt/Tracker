@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:myapp="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/camera_menu_item"
+        android:icon="@android:drawable/ic_menu_camera"
+        android:title="Spot Report"
+        myapp:showAsAction="always" />
+    <item android:id="@+id/show_names_menu_item"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="Show Names"
+        myapp:showAsAction="always" />
+
+</menu>

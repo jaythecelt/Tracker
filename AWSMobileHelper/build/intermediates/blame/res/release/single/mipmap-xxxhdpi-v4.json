@@ -1,0 +1,42 @@
+[
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_login.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_login.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_google.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_google.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_twitter.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_twitter.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_facebook.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_facebook.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_facebook_pressed.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_facebook_pressed.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_amazon_pressed.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_amazon_pressed.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_amazon.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_amazon.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_login_pressed.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_login_pressed.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_google_pressed.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_google_pressed.png"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\release\\mipmap-xxxhdpi-v4\\button_twitter_pressed.png",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\src\\main\\res\\mipmap-xxxhdpi\\button_twitter_pressed.png"
+    }
+]
