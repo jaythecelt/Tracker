@@ -20,11 +20,24 @@ import jfh.jawstestapp1a.utilities.Util;
 public class TransferUtilityHelper {
     private static final String TAG = TransferUtilityHelper.class.getSimpleName();
 
+    public static final int COMPLETE = 0;
+    public static final int FAILED = -1;
+
     private Context context;
+    private String intentAction = null;
 
 
-    public TransferUtilityHelper (Context context) {
+    /**
+     * If the intentAction is not null, the TransferUtilityHelper will broadcast whenever the
+     * transfer state changes (using the intentAction parameter.  Otherwise no broadcast will occur.
+     *
+     * @param context
+     * @param intentAction
+     */
+
+    public TransferUtilityHelper (Context context, String intentAction) {
         this.context = context;
+        this.intentAction = intentAction;
     }
 
     /**
@@ -39,28 +52,28 @@ public class TransferUtilityHelper {
 
     }
 
-    private void makeTransferToast(TransferState state) {
+    private void makeTransferToast(TransferState state, String key) {
         String message;
         switch (state) {
             case WAITING:
             case WAITING_FOR_NETWORK:
             case PAUSED:
-                message = "Image transfer to cloud queued.";
+                message = "Image transfer to cloud queued. " + key;
                 break;
             case IN_PROGRESS:
-                message = "Image transfer in progress.";
+                message = "Image transfer in progress. " + key;
                 break;
             case CANCELED:
-                message = "Image transfer canceled.";
+                message = "Image transfer canceled. " + key;
                 break;
             case COMPLETED:
-                message = "Image transfer to cloud complete.";
+                message = "Image transfer to cloud complete. " + key;
                 break;
             case FAILED:
-                message = "Image transfer to cloud failed.";
+                message = "Image transfer to cloud failed. " + key;
                 break;
             default:
-                message = "Image transfer in unknown state";
+                message = "Image transfer in unknown state. " + key;
         }
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
     }
@@ -70,28 +83,37 @@ public class TransferUtilityHelper {
     }
 
 
-    public int uploadFile(String bucketName, String key, File file) {
+
+    public int uploadFile(String bucketName, final String key, File file) {
 
         TransferUtility transferUtility =
                 new TransferUtility(getS3Client(context.getApplicationContext()),
                                     context.getApplicationContext());
 
-        TransferObserver observer = transferUtility.upload(
-                            bucketName,                 /* The bucket to upload to */
-                            key,                        /* The key for the uploaded object */
-                            file );                       /* The file where the data to upload exists */
+        TransferObserver observer =
+                transferUtility.upload( bucketName,      /* The bucket to upload to */
+                                        key,             /* The key for the uploaded object */
+                                        file );          /* The file where the data to upload exists */
 
 
         observer.setTransferListener(new TransferListener(){
             @Override
             public void onStateChanged(int id, TransferState state) {
                 Log.d(TAG, "onStateChanged() called with: id = [" + id + "], state = [" + state + "]");
-                makeTransferToast(state); //Make toast on update
-                Intent i = new Intent(Constants.INTENT_S3_TRANSFER_COMPLETE_ACTION);
-                i.putExtra(Constants.INTENT_S3_ID, id);
-                i.putExtra(Constants.INTENT_S3_TRANSFER_STATE, state.ordinal());
-                context.sendBroadcast(i);
 
+                makeTransferToast(state, key); //Make toast on update
+
+                if (intentAction==null) return; //No notification needed if null
+
+                if ((state.compareTo(TransferState.COMPLETED)==0) ||
+                            state.compareTo(TransferState.FAILED)==0 ) {
+                    Log.d(TAG, "onStateChanged: Sending broadcast...");
+                    int status = (state.compareTo(TransferState.COMPLETED)==0) ? COMPLETE : FAILED;
+                    Intent i = new Intent(intentAction);
+                    i.putExtra(Constants.INTENT_S3_ID, id);
+                    i.putExtra(Constants.INTENT_XFER_HELPER_STATUS, status);
+                    context.sendBroadcast(i);
+                }
             }
             @Override
             public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {

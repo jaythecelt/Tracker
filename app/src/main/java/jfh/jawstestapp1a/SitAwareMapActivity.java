@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.provider.MediaStore;
@@ -13,20 +12,17 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -63,9 +59,12 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
     private Marker myMarker = null;
     private Polyline myLine = null;
     private LatLng oldLoc = null;
+    private LatLng initialLocation = null;
 
     private Track myCurrentTrack = null;
     private Uri myLatestImageURI = null;
+
+    protected SpotReportHandler spotReportHandler;
 
     //List of icons available to be assigned
     protected List<Integer> availableIcons =
@@ -104,7 +103,8 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
         mapFragment.getMapAsync(this);
 
         userName = getIntent().getStringExtra(Constants.INTENT_USER_NAME);
-        Log.d(TAG, "onCreate: userName = " + userName);
+
+        spotReportHandler = new SpotReportHandler(getApplicationContext(), this);
     }
 
 
@@ -143,6 +143,7 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
         //noinspection MissingPermission
         map.setMyLocationEnabled(true);
 
+
 //        LatLng home = new LatLng(40.75055587, -80.39055334);
 //        map.moveCamera(CameraUpdateFactory.newLatLngZoom(home, 15));
 //
@@ -168,6 +169,9 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
         if (mapBroadcastReceiver != null) {
             Log.i(TAG, "onDestroy: unregister broadcast receiver.");
             unregisterReceiver(mapBroadcastReceiver);
+        }
+        if (spotReportHandler!=null) {
+            spotReportHandler.cleanup();
         }
     }
 
@@ -250,6 +254,12 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
         //Update the current track//
         myCurrentTrack = track;
 
+        //Move camera on the first GPS update.
+        if (initialLocation==null) {
+           initialLocation = new LatLng(latitude, longitude);
+           map.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLocation, 15));
+        }
+
     }
 
 
@@ -263,6 +273,8 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
         if (userName.equals(srUserId)) {
             return; //No updates for current user
         }
+        addSpotReportToMap(sr);
+        Toast.makeText(this, "Spot report received.", Toast.LENGTH_SHORT).show();
     }
 
 
@@ -289,30 +301,31 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
             return;
         }
 
-        //Create the file
-        File imageFile = null;
+        //Create the files for the image and for the thumbnail.
+        File[] imageFiles = null;
+
         try {
-            imageFile = Util.createTempImageFile(this, "spot", "bmp");
+            //imageFiles[0] is the full size image, imageFiles[1] is the thumbnail.
+            imageFiles = Util.createImageFiles(this, "spot", "bmp");
         } catch (IOException e) {
             Toast.makeText(this, "Cannot create image file.", Toast.LENGTH_LONG).show();
             Log.e(TAG, "dispatchTakePictureIntent: Cannot create image file", e );
         }
-        if (imageFile==null) return;
+        if (imageFiles[0]==null) return;
 
-        Log.d(TAG, "dispatchTakePictureIntent: Image path = " + imageFile.getAbsolutePath());
+        //The spotReportHandler takes care of creating and saving the spot report, including
+        // creating a thubmnail from the full size image and uploading them to the cloud.
+        spotReportHandler.setImage(imageFiles[0], imageFiles[1]);
+
+        Log.d(TAG, "dispatchTakePictureIntent: Image path = " + imageFiles[0].getAbsolutePath());
+        //URI for full size image.
         Uri imageURI = FileProvider.getUriForFile(this,
                                                   "jfh.jawstestapp1a.fileprovider",
-                                                  imageFile);
+                                                  imageFiles[0]);
 
-        Log.i(TAG, "dispatchTakePictureIntent: URI for image:" + imageURI.getPath());
-
-        spotReportHandler = SpotReportHandler.getInstance(getApplicationContext(), this);
-        spotReportHandler.setImage(imageURI, imageFile);
         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageURI);
         startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
     }
-
-    protected SpotReportHandler spotReportHandler;
 
     /**
      * Callback from activity completion.
@@ -333,7 +346,20 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
             //Note: data is null from an image capture.
             //Got the image, now assemble the spot report
             spotReportHandler.createAndPost(userName, myCurrentTrack);
+            //Add the spot report to the map
+            addSpotReportToMap(spotReportHandler.getSpotReport());
+
+
         }
+    }
+
+    private void addSpotReportToMap(SpotReport spotReport) {
+        if (spotReport==null) return;
+        LatLng loc = new LatLng(spotReport.getSrLat(), spotReport.getSrLong());
+
+        Marker srMarker = map.addMarker(new MarkerOptions().position(loc).snippet(spotReport.getTitle()).anchor(0.5f, 0.5f)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_target)));
+
     }
 
 
@@ -363,10 +389,10 @@ public class SitAwareMapActivity extends FragmentActivity implements OnMapReadyC
 //            if (myMarker!=null) myMarker.remove(); //Remove the previously set marker
 //            if (myLine!=null) myLine.remove();
 //
-            Drawable d = ContextCompat.getDrawable(context, R.mipmap.ic_blue_dot);
+//            Drawable d = ContextCompat.getDrawable(context, R.mipmap.ic_blue_dot);
 ////                    d.setColorFilter(new
 ////                            PorterDuffColorFilter(0xffff00, PorterDuff.Mode.MULTIPLY));
-            BitmapDescriptor icon = Util.getMarkerIconFromDrawable(d);
+//            BitmapDescriptor icon = Util.getMarkerIconFromDrawable(d);
 //
 //
 //

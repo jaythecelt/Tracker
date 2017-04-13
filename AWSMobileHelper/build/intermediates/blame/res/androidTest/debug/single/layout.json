@@ -88,12 +88,12 @@
         "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\24.2.0\\res\\layout\\notification_template_big_media.xml"
     },
     {
-        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\androidTest\\debug\\layout\\abc_action_menu_layout.xml",
-        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\24.2.0\\res\\layout\\abc_action_menu_layout.xml"
-    },
-    {
         "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\androidTest\\debug\\layout\\abc_action_bar_view_list_nav_layout.xml",
         "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\24.2.0\\res\\layout\\abc_action_bar_view_list_nav_layout.xml"
+    },
+    {
+        "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\androidTest\\debug\\layout\\abc_action_menu_layout.xml",
+        "source": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\24.2.0\\res\\layout\\abc_action_menu_layout.xml"
     },
     {
         "merged": "C:\\AndroidJAWS\\JAWSTestApp1a\\AWSMobileHelper\\build\\intermediates\\res\\merged\\androidTest\\debug\\layout\\support_simple_spinner_dropdown_item.xml",

@@ -57,7 +57,7 @@ public class SignInActivity extends Activity {
             final SignInResultHandler signInResultsHandler = signInManager.getResultHandler();
 
             // Load user name and image.
-            identityManager.loadUserInfoAndImage(provider, new Runnable() {
+            identityManager.loadUserIdentityProfile(provider, new Runnable() {
                 @Override
                 public void run() {
                     // Call back the results handler.

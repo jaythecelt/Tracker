@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
 
         final IdentityManager identityManager =
                 AWSMobileClient.defaultMobileClient().getIdentityManager();
-        userName = identityManager.getUserName();
+        userName = identityManager.getIdentityProfile().getUserName();
 
         //Clicking on the map image starts the map activity//
         Button btn = (Button) findViewById(R.id.map_btn);

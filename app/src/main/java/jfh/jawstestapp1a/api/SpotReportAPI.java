@@ -34,7 +34,8 @@ public class SpotReportAPI {
         msg.setSpotReport(spotReport);
         Gson gson = new Gson();
         String body = gson.toJson(msg);
-        Log.i(TAG, body);
+
+        Log.d(TAG, "postSpotReport: Length of payload is: " + body.length());
 
         final Map<String, String> queryStringParameters = new HashMap<String, String>();
         final Map<String, String> headers = new HashMap<String, String>();

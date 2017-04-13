@@ -104,22 +104,28 @@ public class Util {
      * @param context
      * @param pre
      * @param ext
-     * @return
+     * @return  images[0] = full size image file
+     *          images[1] = thumbnail file
      * @throws IOException
      */
-    public static File createTempImageFile(@NonNull Context context, @NonNull String pre, String ext) throws IOException {
+    public static File[] createImageFiles(@NonNull Context context, @NonNull String pre, String ext) throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = pre + "_" + timeStamp;
+        String thumbnailFileName = pre + "_tn_" + timeStamp;
 
 //        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         File storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        File image = File.createTempFile(
-                imageFileName,  /* prefix */
-                "." + ext,      /* suffix */
-                storageDir      /* directory */
-        );
-        return image;
+        File [] images = new File[2];
+        images[0] = File.createTempFile(   imageFileName,   /* prefix */
+                                            "." + ext,      /* suffix */
+                                            storageDir      /* directory */
+                                         );
+        images[1] = File.createTempFile( thumbnailFileName, /* prefix */
+                                            "." + ext,      /* suffix */
+                                            storageDir      /* directory */
+                                        );
+        return images;
     }
 
 
